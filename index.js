@@ -1,6 +1,7 @@
-import express from "express";
+import express from 'express';
 import mysql from 'mysql2';
 import dotenv from 'dotenv';
+import bodyParser from 'body-parser';
 
 dotenv.config();
 
@@ -22,16 +23,13 @@ db.connect((err) => {
   console.log('Connected to the database.');
 });
 
-app.get('/', (req, res) => {
-  res.send('Hello World!');
-});
+app.use(bodyParser.json());
 
 app.get('/users', (req, res) => {
   db.query('SELECT * FROM users', (err, results) => {
     if (err) {
       return res.status(500).send(err);
     }
-    console.info('users - get: ', results);
     res.json(results);
   });
 });
@@ -40,10 +38,39 @@ app.post('/users', (req, res) => {
   const { name, email, password } = req.body;
   db.query('INSERT INTO users (name, email, password) VALUES (?, ?, ?)', [name, email, password], (err, results) => {
     if (err) {
+      console.error('Database error:', err);
       return res.status(500).send(err);
     }
-    console.info('users - post: ', results);
     res.status(201).send(`User added with ID: ${results.insertId}`);
+  });
+});
+
+app.delete('/users/:id', (req, res) => {
+  const userId = req.params.id;
+  db.query('DELETE FROM users WHERE id = ?', [userId], (err, results) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).send(err);
+    }
+    if (results.affectedRows === 0) {
+      return res.status(404).send('User not found');
+    }
+    res.status(200).send(`User deleted with ID: ${userId}`);
+  });
+});
+
+app.put('/users/:id', (req, res) => {
+  const userId = req.params.id;
+  const { name, email, password } = req.body;
+  db.query('UPDATE users SET name = ?, email = ?, password = ? WHERE id = ?', [name, email, password, userId], (err, results) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).send(err);
+    }
+    if (results.affectedRows === 0) {
+      return res.status(404).send('User not found');
+    }
+    res.status(200).send(`User updated with ID: ${userId}`);
   });
 });
 
