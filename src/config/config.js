@@ -9,4 +9,4 @@ export const dbConfig = {
   database: process.env.DB_NAME,
 };
 
-export const port = process.env.PORT || 3000;
+export const port = process.env.PORT || 4000;
